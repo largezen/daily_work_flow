@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DailyFlow — Personal Work Tracker</title>
+<style>
+:root{--bg:#f4f6fb;--panel:#fff;--ink:#172033;--muted:#6b7280;--line:#e7eaf1;--blue:#315efb;--blue-soft:#edf1ff;--green:#13865c;--red:#d64545;--amber:#b7791f;--shadow:0 10px 30px rgba(25,38,70,.06)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Arial,Helvetica,sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer;border:0}
+.app{max-width:1180px;margin:auto;padding:28px 20px 50px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:24px}
+.brand h1{font-size:25px;margin:0;letter-spacing:-.7px}.brand p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.date-chip{background:#fff;border:1px solid var(--line);padding:10px 14px;border-radius:12px;color:var(--muted);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}.stat,.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.stat{padding:17px 18px}.stat span{display:block;color:var(--muted);font-size:12px}.stat strong{display:block;font-size:27px;margin-top:5px}
+.layout{display:grid;grid-template-columns: minmax(0,1.55fr) minmax(280px,.8fr);gap:18px;align-items:start}
+.panel{padding:20px}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.panel h2{font-size:17px;margin:0}.sub{color:var(--muted);font-size:12px;margin-top:3px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}.field label{font-size:12px;color:var(--muted);font-weight:700}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fff;color:var(--ink);outline:none}
+input:focus,select:focus,textarea:focus{border-color:#8ca2ff;box-shadow:0 0 0 3px #315efb16}
+textarea{resize:vertical;min-height:76px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{padding:10px 14px;border-radius:10px;font-weight:700;font-size:13px}.primary{background:var(--blue);color:#fff}.secondary{background:var(--blue-soft);color:var(--blue)}.ghost{background:#f3f4f6;color:#4b5563}.danger{background:#fff0f0;color:var(--red)}
+.form-actions{display:flex;gap:8px}.filters{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}.filters input{flex:1;min-width:150px}.filters select{width:auto;min-width:120px}
+.task-list{display:flex;flex-direction:column;gap:9px}.task{border:1px solid var(--line);border-radius:12px;padding:13px;display:flex;gap:11px;align-items:flex-start;background:#fff}
+.task.done{opacity:.65}.task.done .task-title{text-decoration:line-through}.check{width:19px;height:19px;margin-top:2px;accent-color:var(--blue);flex:0 0 auto}
+.task-main{flex:1;min-width:0}.task-title{font-weight:700;overflow-wrap:anywhere}.task-note{font-size:12px;color:var(--muted);margin-top:3px;white-space:pre-wrap;overflow-wrap:anywhere}
+.meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.tag{font-size:11px;padding:3px 8px;border-radius:20px;background:#f1f3f8;color:#626b7d}.tag.high{background:#fff0e8;color:#b45309}.tag.overdue{background:#fff0f0;color:var(--red)}
+.task-actions{display:flex;gap:5px}.icon-btn{background:#f4f5f8;color:#596174;border-radius:8px;padding:6px 8px;font-size:12px}
+.empty{text-align:center;padding:35px 15px;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+.progress{height:8px;background:#edf0f5;border-radius:20px;overflow:hidden;margin:12px 0}.progress div{height:100%;background:var(--blue);width:0;transition:width .2s}
+.quick-list{display:flex;flex-direction:column;gap:10px}.quick-item{display:flex;justify-content:space-between;gap:12px;font-size:13px}.quick-item span{color:var(--muted)}
+.note-box{margin-top:16px}.note-box textarea{min-height:130px}.storage{font-size:11px;color:var(--muted);margin-top:12px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#172033;color:white;padding:10px 16px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.app{padding:18px 12px 35px}.top{align-items:flex-start;flex-direction:column}.panel{padding:15px}.form-grid{grid-template-columns:1fr}.filters>*{width:100%!important}.task-actions{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><h1>DailyFlow</h1><p>Your personal daily work dashboard</p></div>
+    <div class="date-chip" id="todayLabel"></div>
+  </header>
+
+  <section class="stats">
+    <div class="stat"><span>Total tasks</span><strong id="totalCount">0</strong></div>
+    <div class="stat"><span>Completed</span><strong id="doneCount">0</strong></div>
+    <div class="stat"><span>Pending</span><strong id="pendingCount">0</strong></div>
+    <div class="stat"><span>Overdue</span><strong id="overdueCount">0</strong></div>
+  </section>
+
+  <main class="layout">
+    <section class="panel">
+      <div class="panel-head"><div><h2 id="formHeading">Add a task</h2><div class="sub">Capture work, set a priority and keep moving.</div></div></div>
+      <form id="taskForm">
+        <input type="hidden" id="taskId">
+        <div class="field"><label for="taskTitle">TASK TITLE *</label><input id="taskTitle" maxlength="140" placeholder="e.g. Finish client website homepage" required></div>
+        <div class="form-grid">
+          <div class="field"><label for="taskDate">DUE DATE</label><input type="date" id="taskDate"></div>
+          <div class="field"><label for="taskPriority">PRIORITY</label><select id="taskPriority"><option value="Normal">Normal</option><option value="High">High</option><option value="Low">Low</option></select></div>
+          <div class="field"><label for="taskCategory">CATEGORY</label><select id="taskCategory"><option>Work</option><option>Client</option><option>Learning</option><option>Personal</option><option>Business</option><option>Other</option></select></div>
+          <div class="field"><label for="taskStatus">STATUS</label><select id="taskStatus"><option value="Pending">Pending</option><option value="In Progress">In Progress</option><option value="Done">Done</option></select></div>
+        </div>
+        <div class="field"><label for="taskNotes">NOTES (OPTIONAL)</label><textarea id="taskNotes" placeholder="Details, next step, client requirements..."></textarea></div>
+        <div class="form-actions"><button class="btn primary" type="submit" id="saveBtn">Add task</button><button class="btn ghost" type="button" id="cancelEdit" hidden>Cancel</button></div>
+      </form>
+
+      <div class="filters">
+        <input id="searchInput" placeholder="Search tasks...">
+        <select id="statusFilter"><option value="All">All statuses</option><option>Pending</option><option>In Progress</option><option>Done</option></select>
+        <select id="categoryFilter"><option value="All">All categories</option><option>Work</option><option>Client</option><option>Learning</option><option>Personal</option><option>Business</option><option>Other</option></select>
+      </div>
+      <div class="panel-head"><div><h2>My tasks</h2><div class="sub" id="listSummary">All your saved tasks</div></div><button class="btn ghost" id="clearCompleted" type="button">Clear completed</button></div>
+      <div class="task-list" id="taskList"><div class="empty">Loading your tasks...</div></div>
+    </section>
+
+    <aside>
+      <section class="panel">
+        <div class="panel-head"><div><h2>Today's overview</h2><div class="sub">A quick view of your progress</div></div></div>
+        <div class="quick-list">
+          <div class="quick-item"><span>Today's tasks</span><strong id="todayCount">0</strong></div>
+          <div class="quick-item"><span>Due today and pending</span><strong id="todayPending">0</strong></div>
+          <div class="quick-item"><span>High priority pending</span><strong id="highCount">0</strong></div>
+        </div>
+        <div class="progress"><div id="progressBar"></div></div>
+        <div class="sub" id="progressText">0% completed</div>
+      </section>
+      <section class="panel note-box">
+        <div class="panel-head"><div><h2>Daily notes</h2><div class="sub">Ideas, reminders or end-of-day review</div></div></div>
+        <textarea id="dailyNotes" placeholder="What should you remember today?"></textarea>
+        <div class="storage">Notes are saved automatically in LocalStorage.</div>
+      </section>
+      <section class="panel" style="margin-top:16px">
+        <div class="panel-head"><div><h2>Data & backup</h2><div class="sub">Your data stays in this browser.</div></div></div>
+        <div class="form-actions"><button class="btn secondary" id="exportBtn" type="button">Export JSON</button><button class="btn ghost" id="importBtn" type="button">Import JSON</button><input type="file" id="importFile" accept="application/json,.json" hidden></div>
+        <div class="storage" id="dbStatus">Connecting to IndexedDB...</div>
+        <div class="storage">Tasks: IndexedDB · Daily notes and preferences: LocalStorage. Export backups regularly; clearing browser data can erase local records.</div>
+      </section>
+    </aside>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+(() => {
+  "use strict";
+  const DB_NAME = "dailyflow_db", DB_VERSION = 1, STORE = "tasks";
+  const $ = id => document.getElementById(id);
+  let db, tasks = [];
+
+  const today = () => new Date().toISOString().slice(0,10);
+  const showToast = message => {
+    const el = $("toast"); el.textContent = message; el.classList.add("show");
+    setTimeout(() => el.classList.remove("show"), 2200);
+  };
+  const openDB = () => new Promise((resolve, reject) => {
+    if (!("indexedDB" in window)) return reject(new Error("IndexedDB is not supported in this browser."));
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = () => {
+      const database = request.result;
+      if (!database.objectStoreNames.contains(STORE)) {
+        const store = database.createObjectStore(STORE, { keyPath: "id" });
+        store.createIndex("dueDate", "dueDate", { unique: false });
+        store.createIndex("status", "status", { unique: false });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  const storeRequest = (mode, callback) => new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, mode), store = tx.objectStore(STORE);
+    let result;
+    try { result = callback(store); } catch (e) { reject(e); return; }
+    tx.oncomplete = () => resolve(result && result.result);
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error("Database transaction aborted"));
+  });
+  const getAll = () => new Promise((resolve, reject) => {
+    const req = db.transaction(STORE, "readonly").objectStore(STORE).getAll();
+    req.onsuccess = () => resolve(req.result || []); req.onerror = () => reject(req.error);
+  });
+  const saveTask = task => storeRequest("readwrite", s => s.put(task));
+  const deleteTask = id => storeRequest("readwrite", s => s.delete(id));
+  const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const isOverdue = t => t.dueDate && t.dueDate < today() && t.status !== "Done";
+
+  function render() {
+    const total = tasks.length, done = tasks.filter(t => t.status === "Done").length;
+    const pending = tasks.filter(t => t.status !== "Done").length;
+    const overdue = tasks.filter(isOverdue).length;
+    $("totalCount").textContent = total; $("doneCount").textContent = done;
+    $("pendingCount").textContent = pending; $("overdueCount").textContent = overdue;
+    const todays = tasks.filter(t => t.dueDate === today());
+    $("todayCount").textContent = todays.length;
+    $("todayPending").textContent = todays.filter(t => t.status !== "Done").length;
+    $("highCount").textContent = tasks.filter(t => t.priority === "High" && t.status !== "Done").length;
+    const percent = total ? Math.round(done / total * 100) : 0;
+    $("progressBar").style.width = percent + "%"; $("progressText").textContent = percent + "% completed";
+
+    const q = $("searchInput").value.trim().toLowerCase(), sf = $("statusFilter").value, cf = $("categoryFilter").value;
+    let shown = tasks.filter(t => {
+      const matchText = [t.title,t.notes,t.category].join(" ").toLowerCase().includes(q);
+      return matchText && (sf === "All" || t.status === sf) && (cf === "All" || t.category === cf);
+    }).sort((a,b) => {
+      const rank = {High:0,Normal:1,Low:2};
+      if (a.status === "Done" && b.status !== "Done") return 1;
+      if (b.status === "Done" && a.status !== "Done") return -1;
+      return (rank[a.priority] - rank[b.priority]) || (a.dueDate || "9999").localeCompare(b.dueDate || "9999") || b.updatedAt - a.updatedAt;
+    });
+    $("listSummary").textContent = `${shown.length} task${shown.length === 1 ? "" : "s"} shown`;
+    if (!shown.length) { $("taskList").innerHTML = '<div class="empty">No tasks found. Add a task to get started.</div>'; return; }
+    $("taskList").innerHTML = shown.map(t => `
+      <article class="task ${t.status === "Done" ? "done" : ""}">
+        <input class="check" type="checkbox" data-toggle="${escapeHTML(t.id)}" ${t.status === "Done" ? "checked" : ""} aria-label="Mark task complete">
+        <div class="task-main">
+          <div class="task-title">${escapeHTML(t.title)}</div>
+          ${t.notes ? `<div class="task-note">${escapeHTML(t.notes)}</div>` : ""}
+          <div class="meta">
+            <span class="tag">${escapeHTML(t.category)}</span>
+            <span class="tag ${t.priority === "High" ? "high" : ""}">${escapeHTML(t.priority)} priority</span>
+            <span class="tag">${escapeHTML(t.status)}</span>
+            ${t.dueDate ? `<span class="tag ${isOverdue(t) ? "overdue" : ""}">${isOverdue(t) ? "Overdue · " : "Due · "}${escapeHTML(t.dueDate)}</span>` : ""}
+          </div>
+        </div>
+        <div class="task-actions"><button class="icon-btn" data-edit="${escapeHTML(t.id)}">Edit</button><button class="icon-btn" data-delete="${escapeHTML(t.id)}">Delete</button></div>
+      </article>`).join("");
+  }
+  async function refresh() { tasks = await getAll(); render(); }
+  function resetForm() {
+    $("taskForm").reset(); $("taskId").value = ""; $("taskDate").value = today();
+    $("formHeading").textContent = "Add a task"; $("saveBtn").textContent = "Add task"; $("cancelEdit").hidden = true;
+  }
+  $("taskForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const title = $("taskTitle").value.trim(); if (!title) return;
+    const id = $("taskId").value || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
+    const existing = tasks.find(t => t.id === id);
+    const task = {
+      id, title, dueDate: $("taskDate").value, priority: $("taskPriority").value,
+      category: $("taskCategory").value, status: $("taskStatus").value,
+      notes: $("taskNotes").value.trim(), createdAt: existing?.createdAt || Date.now(), updatedAt: Date.now()
+    };
+    try { await saveTask(task); await refresh(); resetForm(); showToast(existing ? "Task updated" : "Task added"); }
+    catch (err) { showToast("Could not save task: " + err.message); }
+  });
+  $("cancelEdit").addEventListener("click", resetForm);
+  $("taskList").addEventListener("click", async e => {
+    const editId = e.target.dataset.edit, deleteId = e.target.dataset.delete;
+    if (editId) {
+      const t = tasks.find(x => x.id === editId); if (!t) return;
+      $("taskId").value = t.id; $("taskTitle").value = t.title; $("taskDate").value = t.dueDate || "";
+      $("taskPriority").value = t.priority; $("taskCategory").value = t.category;
+      $("taskStatus").value = t.status; $("taskNotes").value = t.notes || "";
+      $("formHeading").textContent = "Edit task"; $("saveBtn").textContent = "Update task"; $("cancelEdit").hidden = false;
+      $("taskTitle").focus(); window.scrollTo({top:0,behavior:"smooth"});
+    }
+    if (deleteId && confirm("Delete this task permanently?")) {
+      await deleteTask(deleteId); await refresh(); showToast("Task deleted");
+    }
+  });
+  $("taskList").addEventListener("change", async e => {
+    const id = e.target.dataset.toggle; if (!id) return;
+    const t = tasks.find(x => x.id === id); if (!t) return;
+    t.status = e.target.checked ? "Done" : "Pending"; t.updatedAt = Date.now();
+    await saveTask(t); await refresh();
+  });
+  ["searchInput","statusFilter","categoryFilter"].forEach(id => $(id).addEventListener(id === "searchInput" ? "input" : "change", render));
+  $("clearCompleted").addEventListener("click", async () => {
+    const completed = tasks.filter(t => t.status === "Done");
+    if (!completed.length) return showToast("No completed tasks to clear");
+    if (!confirm(`Delete ${completed.length} completed task(s)?`)) return;
+    for (const t of completed) await deleteTask(t.id);
+    await refresh(); showToast("Completed tasks cleared");
+  });
+
+  const noteKey = "dailyflow_notes_" + today();
+  $("todayLabel").textContent = new Date().toLocaleDateString(undefined,{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+  $("taskDate").value = today();
+  $("dailyNotes").value = localStorage.getItem(noteKey) || "";
+  $("dailyNotes").addEventListener("input", () => localStorage.setItem(noteKey, $("dailyNotes").value));
+
+  $("exportBtn").addEventListener("click", async () => {
+    const backup = {app:"DailyFlow",version:1,exportedAt:new Date().toISOString(),tasks:await getAll(),dailyNotes:localStorage.getItem(noteKey) || ""};
+    const blob = new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
+    const url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = "dailyflow-backup-" + today() + ".json"; a.click(); URL.revokeObjectURL(url);
+    showToast("Backup exported");
+  });
+  $("importBtn").addEventListener("click", () => $("importFile").click());
+  $("importFile").addEventListener("change", async e => {
+    const file = e.target.files[0]; if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (!Array.isArray(data.tasks)) throw new Error("Invalid backup file");
+      if (!confirm(`Import ${data.tasks.length} task(s)? Matching IDs will be overwritten.`)) return;
+      for (const t of data.tasks) {
+        if (!t.id || !t.title) continue;
+        await saveTask({...t,updatedAt:Date.now()});
+      }
+      if (typeof data.dailyNotes === "string") {
+        localStorage.setItem(noteKey,data.dailyNotes); $("dailyNotes").value = data.dailyNotes;
+      }
+      await refresh(); showToast("Backup imported");
+    } catch(err) { alert("Import failed: " + err.message); }
+    finally { e.target.value = ""; }
+  });
+
+  (async () => {
+    try {
+      db = await openDB(); await refresh();
+      $("dbStatus").textContent = "IndexedDB connected · " + DB_NAME;
+    } catch(err) {
+      $("dbStatus").textContent = "Database error: " + err.message;
+      $("taskList").innerHTML = '<div class="empty">Could not open IndexedDB. Try a modern browser or run this file through localhost.</div>';
+    }
+  })();
+})();
+</script>
+</body>
+</html>
